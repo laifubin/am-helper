@@ -1,0 +1,25 @@
+{
+  "version": "1.0",
+  "manifest_version": 3,
+  "name": "Amazon Helper",
+  "description": "This plugin can provide some help for Amazon sellers, and the features will be continuously improved.",
+
+  "permissions": [],
+  "action": {
+    "default_icon": "am.png",
+    "default_popup": "popup.html"
+  },
+  "icons": {
+		"16": "am.png",
+		"48": "am.png",
+		"128": "am.png"
+	},
+  "content_scripts": [
+    {
+      "matches": ["https://www.amazon.com/*", "https://fanyi.youdao.com/*", "http://localhost:1888/*"],
+      "css": ["css/content.css"],
+      "js": ["js/contentScript.js"],
+      "run_at": "document_end"
+    }
+  ]
+}
