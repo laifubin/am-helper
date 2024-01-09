@@ -3,8 +3,6 @@
   "manifest_version": 3,
   "name": "Amazon Helper",
   "description": "This plugin can provide some help for Amazon sellers, and the features will be continuously improved.",
-
-  "permissions": [],
   "action": {
     "default_icon": "am.png",
     "default_popup": "popup.html"
@@ -16,10 +14,28 @@
 	},
   "content_scripts": [
     {
-      "matches": ["https://www.amazon.com/*", "https://fanyi.youdao.com/*", "http://localhost:1888/*"],
+      "matches": ["https://www.amazon.com/*", "https://*/*",  "http://*/*"],
       "css": ["css/content.css"],
       "js": ["js/contentScript.js"],
       "run_at": "document_end"
+    },
+    {
+      "matches": ["https://www.amazon.com/*", "https://*/*", "http://*/*"],
+      "js": ["js/xlsx.full.min.js", "js/md5.js"],
+      "run_at": "document_start"
     }
-  ]
+  ],
+  "permissions": [
+    "webRequest",
+    "scripting",
+    "cookies",
+		"storage",
+    "tabs",
+    "notifications",
+    "alarms"
+  ],
+  "host_permissions": ["https://www.sellersprite.com/*"],
+  "background": {
+    "service_worker": "background.js"
+  }
 }
