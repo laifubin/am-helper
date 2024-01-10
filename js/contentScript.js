@@ -16,11 +16,13 @@
       <div class="content">
 
         <div class="lines"></div>
+        <!--
         <div class="diyBtn">
           <span id="currentPage">获取当前页</span>
           <span id="2">获取当前查询所有结果</span>
         </div>
         <div class="lines"></div>
+        -->
 
         <div class="form-item">
           <label for="keywords">关键词</label>
@@ -30,7 +32,8 @@
           <label for="link">链接</label>
           <input type="text" id="link" placeholder="请输入链接">
         </div>
-        <input id="submit2" type="button" value="提交">
+        <input id="submit" type="button" value="pf">
+        <!-- <input id="submit2" type="button" value="提交"> -->
       </div>
       <span class="author">copyright@laifubin by 2023</span>
     </div>
@@ -57,10 +60,27 @@
     }
   })
 
+  /** 获取评论条数 */
+  // B08ZNHQ5D7 B08ZNF1RTN
+  function getReviewsUrl(asin) {
+    return `'https://www.amazon.com/product-reviews/${asin}/ref=cm_cr_arp_d_viewopt_sr?ie=UTF8&filterByStar=all_stars&reviewerType=all_reviews&formatType=current_format&pageNumber=1'`
+  }
+  const submitEl = document.querySelector('#am-helper #submit')
+  submitEl.addEventListener('click', (e) => {
+    const asinEl = document.querySelector('#am-helper #keywords')
+    const asinStr = asinEl.value ?? ''
+    const asinList = asinStr.split(',')
+    const starEl = document.querySelector('#filter-info-section > div[data-hook=cr-filter-info-review-rating-count] ')
+    const reviews = starEl.textContent.match(/[\d,]+/)[0].replace(',', '')
+    const lisEl = document.querySelectorAll('#a-popover-2 li')
+    console.log(starEl.textContent , asinStr)
+   
+  }) 
+
   /** 点击提交 */
   const currentPageEl = document.querySelector('#am-helper #currentPage')
   const lastDate = +new Date('2023-07-27 24:00:00')
-  currentPageEl.addEventListener('click', (e) => {
+  currentPageEl?.addEventListener('click', (e) => {
     const nowDate = Date.now()
     const isValid = nowDate - lastDate < 0
 
