@@ -7,6 +7,26 @@
   // scriptEl.onload = () => {
   //   window.XLSX = XLSX
   // }
+
+  function copy(textValue) {
+    // 动态创建 textarea 标签
+    const textarea = document.createElement('textarea')
+    // 将该 textarea 设为 readonly 防止 iOS 下自动唤起键盘，同时将 textarea 移出可视区域
+    textarea.readOnly = 'readonly'
+    textarea.style.position = 'absolute'
+    textarea.style.left = '-9999px'
+    // 将要 copy 的值赋给 textarea 标签的 value 属性
+    textarea.value = textValue
+    // 将 textarea 插入到 body 中
+    document.body.appendChild(textarea)
+    // 选中值并复制
+    textarea.select()
+    const result = document.execCommand('Copy')
+    if (result) {
+      chrome.runtime.sendMessage({ copy: true, value: textValue })
+    }
+    document.body.removeChild(textarea)
+  }
  
 
   /** 将浮窗添加到页面中 */
@@ -16,13 +36,15 @@
       <div class="content">
 
         <div class="lines"></div>
+
+        <input id="submit" type="button" value="获取评论星级条数" >
         <!--
         <div class="diyBtn">
           <span id="currentPage">获取当前页</span>
           <span id="2">获取当前查询所有结果</span>
         </div>
         <div class="lines"></div>
-        -->
+        
 
         <div class="form-item">
           <label for="keywords">关键词</label>
@@ -32,8 +54,7 @@
           <label for="link">链接</label>
           <input type="text" id="link" placeholder="请输入链接">
         </div>
-        <input id="submit" type="button" value="pf">
-        <!-- <input id="submit2" type="button" value="提交"> -->
+        <input id="submit2" type="button" value="提交"> -->
       </div>
       <span class="author">copyright@laifubin by 2023</span>
     </div>
@@ -61,20 +82,76 @@
   })
 
   /** 获取评论条数 */
-  // B08ZNHQ5D7 B08ZNF1RTN
-  function getReviewsUrl(asin) {
-    return `'https://www.amazon.com/product-reviews/${asin}/ref=cm_cr_arp_d_viewopt_sr?ie=UTF8&filterByStar=all_stars&reviewerType=all_reviews&formatType=current_format&pageNumber=1'`
+  function wait(fn, delay = 800) {
+    return new Promise((resolve, reject) => {
+      try {
+        fn()
+        setTimeout(() => {
+          resolve()
+        }, delay)
+      } catch(e) {
+        console.log(e)
+        reject(e)
+      }
+    })
   }
-  const submitEl = document.querySelector('#am-helper #submit')
-  submitEl.addEventListener('click', (e) => {
-    const asinEl = document.querySelector('#am-helper #keywords')
-    const asinStr = asinEl.value ?? ''
-    const asinList = asinStr.split(',')
+  // 
+  function gotoPage(asin) {
+    return wait(() => {
+      const url =  `https://www.amazon.com/product-reviews/${asin}/ref=cm_cr_arp_d_viewopt_sr?ie=UTF8&filterByStar=all_stars&reviewerType=all_reviews&formatType=current_format&pageNumber=1`
+      window.open(url, '_self')
+    })
+  }
+
+  /** 所有星、1-5星筛选 */
+  function searchStar(star) {
+    return wait(() => {
+      document.getElementById('a-autoid-5-announce').click()
+      // 0: 所有星 5:1 4:2 3:3 2:4 1:5
+      // 1052 624 169 109 65 85 
+      const el = document.getElementById('star-count-dropdown_' + star)
+      el?.click()
+    }, 800)
+  }
+
+   /** 获取评论数量 */ 
+  function getStarCount() {
     const starEl = document.querySelector('#filter-info-section > div[data-hook=cr-filter-info-review-rating-count] ')
     const reviews = starEl.textContent.match(/[\d,]+/)[0].replace(',', '')
-    const lisEl = document.querySelectorAll('#a-popover-2 li')
-    console.log(starEl.textContent , asinStr)
+    return reviews ?? '-'
+  }
+  const submitEl = document.querySelector('#am-helper #submit')
+  submitEl.addEventListener('click', async(e) => {
+    const host = ['www.amazon.com', 'www.amazon.ca']
+    if(!location.pathname.startsWith('/product-reviews/')||!host.includes(location.host)) {
+      chrome.runtime.sendMessage({ invalidPage: true })
+      return
+    } 
+    
+    // const asinEl = document.querySelector('#am-helper #keywords')
+    // const asinStr = asinEl.value ?? ''
+    // const asinList = asinStr.split(',')
+    // const result = {} // {asin1: [1星数量，2星数量，3星数量，4星数量，5星数量，所有星数量]}
+    let result = ''
+    // for(let i = 0; i < asinList.length; i++) {
+    //   const asin = asinList[i]
+    //   await gotoPage(asin)
    
+      for(let j = 5; j >= 0; j--) {
+        await searchStar(j)
+        const count = getStarCount()
+        // result[asin] ??= []
+        // result[asin].push(count)
+        result += ' ' + count
+      }
+      // 第一个有bug，此处修正一下（临时处理）
+      const list = result.trim().split(' ')
+      const first = list[list.length -1] - list.slice(1, -1).reduce((p, c) => +p + +c)
+      list.splice(0, 1, first)
+      result = list.join(' ')
+      copy(result)
+      console.log(result)
+    // }
   }) 
 
   /** 点击提交 */

@@ -1,17 +1,26 @@
 
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if(message.isValid) {
-      if(message.type === 'fetchSellerSpirit') {
-        login('2022US2', message.p)
-        // fetchSellerSpirit(message.data.join(',')).then(res => {
-        //   sendResponse(res?.data ?? [])
-        // })
-      } 
+  if(message.copy){
+    if(message.value.startsWith('-')) {
+      createNotification('数据可能有误，请重新获取或者手动处理：', '1星 2星 3星 4星 5星 全部\n' + message.value)
     } else {
-      createNotification('提示', '试用已到期~')
-      sendResponse([])
+      createNotification('提示-复制成功：', '1星 2星 3星 4星 5星 全部\n' + message.value)
     }
+  } else if(message.invalidPage) {
+    createNotification('提示', '页面错误！\nhttps://www.amazon.com/product-reviews/asin\nhttps://www.amazon.ca/product-reviews/asin')
+  }
+    // if(message.isValid) {
+    //   if(message.type === 'fetchSellerSpirit') {
+    //     login('2022US2', message.p)
+    //     // fetchSellerSpirit(message.data.join(',')).then(res => {
+    //     //   sendResponse(res?.data ?? [])
+    //     // })
+    //   } 
+    // } else {
+    //   createNotification('提示', '试用已到期~')
+    //   sendResponse([])
+    // }
     return true
   }
 )

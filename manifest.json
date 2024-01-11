@@ -14,7 +14,7 @@
 	},
   "content_scripts": [
     {
-      "matches": ["https://www.amazon.com/*", "https://*/*",  "http://*/*"],
+      "matches": ["https://www.amazon.com/*", "https://www.amazon.ca/*"],
       "css": ["css/content.css"],
       "js": ["js/contentScript.js"],
       "run_at": "document_end"
