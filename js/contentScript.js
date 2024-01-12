@@ -37,7 +37,12 @@
 
         <div class="lines"></div>
 
+        <div class="form-item">
+          <label for="asin">ASIN</label>
+          <input type="text" id="asin" placeholder="多个以英文逗号隔开">
+        </div>
         <input id="submit" type="button" value="获取评论星级条数" >
+        <div id="starInfo" title="1星 2星 3星 4星 5星 全部"></div>
         <!--
         <div class="diyBtn">
           <span id="currentPage">获取当前页</span>
@@ -46,10 +51,7 @@
         <div class="lines"></div>
         
 
-        <div class="form-item">
-          <label for="keywords">关键词</label>
-          <input type="text" id="keywords" placeholder="多个以英文逗号隔开">
-        </div>
+        
         <div class="form-item">
           <label for="link">链接</label>
           <input type="text" id="link" placeholder="请输入链接">
@@ -82,6 +84,90 @@
   })
 
   /** 获取评论条数 */
+  // 请求函数
+  function createTask(i) {
+    return () => {
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          resolve(i);
+        }, 2000);
+      });
+    };
+  }
+
+  class TaskQueue {
+    constructor() {
+      this.max = 5;
+      this.taskList = [];
+      setTimeout(() => {
+        this.run();
+      });
+    }
+    addTask(task) {
+      this.taskList.push(task);
+    }
+    run() {
+      let len = this.taskList.length;
+      
+      if (!len) return false;
+      
+      let min = Math.min(this.max, len);
+      for (let i = 0; i < min; i++) {
+        // 开始占用一个任务的空间
+        this.max--;
+        let task = this.taskList.shift();
+        task().then((res => {
+          console.log('result:', res);
+        })).catch(error => {
+          throw new Error(error);
+        }).finally(() => {
+          // 释放一个任务空间
+          this.max++;
+          this.run();
+        });
+      }
+    }
+  }
+  function reqIframe(asin, result) {
+    return () => {
+      return new Promise(async (resolve, reject) => {
+        await wait(createIframe.bind(this, asin))
+        document.getElementById(asin).addEventListener('load', async function(ev){
+          result[asin] ??= []
+          const asinArr = result[asin]
+          let win = ev.target.contentWindow;
+          const asinDoc = win.document
+          for(let j = 5; j >= 0; j--) {
+            await searchStar(j, asinDoc)
+            const count = getStarCount(asinDoc)
+            asinArr.push(count)
+          }
+          const first = asinArr[asinArr.length -1] - asinArr.slice(1, -1).reduce((p, c) => +p + +c)
+          asinArr.splice(0, 1, first)
+          console.log(asinArr)
+          // removeIframe(asin)
+            resolve(result);
+        })
+
+      });
+    };
+  }
+
+
+  function createIframe(asin) {
+    const src = `https://${location.host}/product-reviews/${asin}/ref=cm_cr_arp_d_viewopt_sr?ie=UTF8&filterByStar=all_stars&reviewerType=all_reviews&formatType=current_format&pageNumber=1`
+
+    const elIframe = document.createElement("iframe");
+    elIframe.setAttribute('id', asin)
+    elIframe.setAttribute('src', src)
+    elIframe.setAttribute('style', "width: 100%;height: 50%;opacity:1;position:fixed;top:0;pointer-events:none;z-index:999;border:2px solid red;")
+    // const elHtml = `<iframe id="${asin}" style="width: 100%;height: 50%;opacity:1;position:fixed;top:0;pointer-events:none;z-index:999;border:2px solid red;" src="${url}"></iframe>`
+    document.body.appendChild(elIframe)
+  }
+  function removeIframe(asin) {
+    const iframe = document.getElementById(asin)
+    document.body.removeChild(iframe)
+  }
   function wait(fn, delay = 800) {
     return new Promise((resolve, reject) => {
       try {
@@ -95,63 +181,61 @@
       }
     })
   }
-  // 
-  function gotoPage(asin) {
-    return wait(() => {
-      const url =  `https://www.amazon.com/product-reviews/${asin}/ref=cm_cr_arp_d_viewopt_sr?ie=UTF8&filterByStar=all_stars&reviewerType=all_reviews&formatType=current_format&pageNumber=1`
-      window.open(url, '_self')
-    })
-  }
 
   /** 所有星、1-5星筛选 */
-  function searchStar(star) {
+  function searchStar(star, asinDoc) {
     return wait(() => {
-      document.getElementById('a-autoid-5-announce').click()
+      console.log(asinDoc, 12);
+      asinDoc.getElementById('a-autoid-5-announce').click()
       // 0: 所有星 5:1 4:2 3:3 2:4 1:5
       // 1052 624 169 109 65 85 
-      const el = document.getElementById('star-count-dropdown_' + star)
+      const el = asinDoc.getElementById('star-count-dropdown_' + star)
       el?.click()
     }, 800)
   }
 
    /** 获取评论数量 */ 
-  function getStarCount() {
-    const starEl = document.querySelector('#filter-info-section > div[data-hook=cr-filter-info-review-rating-count] ')
+  function getStarCount(asinDoc) {
+    const starEl = asinDoc.querySelector('#filter-info-section > div[data-hook=cr-filter-info-review-rating-count] ')
     const reviews = starEl.textContent.match(/[\d,]+/)[0].replace(',', '')
     return reviews ?? '-'
   }
   const submitEl = document.querySelector('#am-helper #submit')
-  submitEl.addEventListener('click', async(e) => {
+  const starInfoEl = document.querySelector('#am-helper #starInfo')
+  submitEl.addEventListener('click', async() => {
     const host = ['www.amazon.com', 'www.amazon.ca']
     if(!location.pathname.startsWith('/product-reviews/')||!host.includes(location.host)) {
       chrome.runtime.sendMessage({ invalidPage: true })
       return
-    } 
+    }
+    starInfoEl.innerHTML = ''
     
-    // const asinEl = document.querySelector('#am-helper #keywords')
-    // const asinStr = asinEl.value ?? ''
-    // const asinList = asinStr.split(',')
-    // const result = {} // {asin1: [1星数量，2星数量，3星数量，4星数量，5星数量，所有星数量]}
-    let result = ''
-    // for(let i = 0; i < asinList.length; i++) {
-    //   const asin = asinList[i]
-    //   await gotoPage(asin)
-   
-      for(let j = 5; j >= 0; j--) {
-        await searchStar(j)
-        const count = getStarCount()
-        // result[asin] ??= []
-        // result[asin].push(count)
-        result += ' ' + count
-      }
-      // 第一个有bug，此处修正一下（临时处理）
-      const list = result.trim().split(' ')
-      const first = list[list.length -1] - list.slice(1, -1).reduce((p, c) => +p + +c)
-      list.splice(0, 1, first)
-      result = list.join(' ')
-      copy(result)
+    const asinEl = document.querySelector('#am-helper #asin')
+    const asinStr = asinEl.value ?? ''
+    const asinList = asinStr.split(',')
+    // {asin1: [1星数量，2星数量，3星数量，4星数量，5星数量，所有星数量]}
+    let result = {}
+    const taskQueue = new TaskQueue();
+    for(let i = 0; i < asinList.length; i++) {
+      const asin = asinList[i]
+      const task = reqIframe(asin, result);
+      taskQueue.addTask(task);
+      // await wait(createIframe.bind(this, asin))
+      // document.getElementById(asin).addEventListener('load', async function(ev){
+      //   result[asin] ??= []
+      //   const asinArr = result[asin]
+      //   for(let j = 5; j >= 0; j--) {
+      //     await searchStar(j)
+      //     const count = getStarCount(ev.target)
+      //     asinArr.push(count)
+      //   }
+      //   const first = asinArr[asinArr.length -1] - asinArr.slice(1, -1).reduce((p, c) => +p + +c)
+      //   asinArr.splice(0, 1, first)
+      //   console.log(asinArr)
+        // removeIframe(asin)
+      // })
       console.log(result)
-    // }
+    }
   }) 
 
   /** 点击提交 */
