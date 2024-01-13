@@ -20,8 +20,8 @@
       "run_at": "document_end"
     },
     {
-      "matches": ["https://www.amazon.com/*", "https://*/*", "http://*/*"],
-      "js": ["js/xlsx.full.min.js", "js/md5.js"],
+      "matches": ["https://*/*", "http://*/*"],
+      "js": ["js/xlsx.full.min.js", "js/md5.js", "js/utils.js", "js/ui.js", "js/getReviews.js"],
       "run_at": "document_start"
     }
   ],

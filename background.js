@@ -1,14 +1,8 @@
 
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if(message.copy){
-    if(message.value.startsWith('-')) {
-      createNotification('数据可能有误，请重新获取或者手动处理：', '1星 2星 3星 4星 5星 全部\n' + message.value)
-    } else {
-      createNotification('提示-复制成功：', '1星 2星 3星 4星 5星 全部\n' + message.value)
-    }
-  } else if(message.invalidPage) {
-    createNotification('提示', '页面错误！\nhttps://www.amazon.com/product-reviews/asin\nhttps://www.amazon.ca/product-reviews/asin')
+   if(message.invalid) {
+    createNotification({ message: message.text })
   }
     // if(message.isValid) {
     //   if(message.type === 'fetchSellerSpirit') {
@@ -140,9 +134,12 @@ function setStorage(key, value) {
   })
 }
 
-function createNotification(title, message) {
+// http://www.taodudu.cc/news/show-3829734.html?action=onClick
+/** type: basic,image,simple,list */
+function createNotification(options) {
+  const { title = '', message, type = 'basic' } = options
   const notificationOptions = {
-    type: "basic",
+    type,
     iconUrl: "am.png",
     title,
     message
