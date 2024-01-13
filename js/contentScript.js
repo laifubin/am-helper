@@ -39,7 +39,7 @@
 
         <div class="form-item">
           <label for="asin">ASIN</label>
-          <input type="text" id="asin" placeholder="多个以英文逗号隔开">
+          <input type="text" id="asin" placeholder="多个以英文逗号或空格隔开">
         </div>
         <input id="submit" type="button" value="获取评论星级条数" >
         <div id="starInfo" title="1星 2星 3星 4星 5星 全部"></div>
@@ -85,32 +85,27 @@
 
   /** 获取评论条数 */
   // 请求函数
-  function createTask(i) {
-    return () => {
-      return new Promise((resolve, reject) => {
-        setTimeout(() => {
-          resolve(i);
-        }, 2000);
-      });
-    };
-  }
-
   class TaskQueue {
-    constructor() {
+    constructor(result) {
+      this.result = result
       this.max = 5;
       this.taskList = [];
+      this.unCompleteCount = 0
       setTimeout(() => {
         this.run();
       });
     }
     addTask(task) {
       this.taskList.push(task);
+      this.unCompleteCount++
     }
     run() {
       let len = this.taskList.length;
       
-      if (!len) return false;
-      
+      if (!len) {
+        return false;
+      }
+
       let min = Math.min(this.max, len);
       for (let i = 0; i < min; i++) {
         // 开始占用一个任务的空间
@@ -123,44 +118,77 @@
         }).finally(() => {
           // 释放一个任务空间
           this.max++;
-          this.run();
+          this.unCompleteCount--
+          let len = this.taskList.length;
+          if(len) this.run();
+          else if(len ==0 && this.unCompleteCount === 0){
+            const title = ['Asin', '1星', '2星', '3星', '4星', '5星', '全部' ]
+            downloadFile(createExcel(this.result, title), '仅供参考-AM评论.xlsx')
+          }
         });
+
+         
       }
     }
   }
-  function reqIframe(asin, result) {
+  function reqIframe(asin, result, percent) {
     return () => {
       return new Promise(async (resolve, reject) => {
         await wait(createIframe.bind(this, asin))
         document.getElementById(asin).addEventListener('load', async function(ev){
-          result[asin] ??= []
-          const asinArr = result[asin]
+          // result[asin] ??= []
+          // const asinArr = result[asin]
+          const asinArr = [asin]
           let win = ev.target.contentWindow;
           const asinDoc = win.document
+          const el = document.querySelector('#am-helper #submit')
+
+          if(!asinDoc.getElementById('a-autoid-5-announce')) {
+            result.push(asinArr)
+            resolve(result);
+            removeIframe(asin)
+            return
+          }
+          setTimeout(async () => {
           for(let j = 5; j >= 0; j--) {
             await searchStar(j, asinDoc)
             const count = getStarCount(asinDoc)
-            asinArr.push(count)
+            asinArr.push(+count)
+            percent.current++
+            el.value = '获取评论星级条数 ' + Math.round(percent.current*100 / percent.total) + '%'
+
           }
-          const first = asinArr[asinArr.length -1] - asinArr.slice(1, -1).reduce((p, c) => +p + +c)
-          asinArr.splice(0, 1, first)
-          console.log(asinArr)
+          // asinArr[0]是asin code
+          const first = asinArr[1]
+          const last = asinArr[asinArr.length -1]
+          const center = asinArr.slice(2, -1).reduce((p, c) => +p + +c)
+          if(first + center > last) {
+            asinArr.splice(1, 1 , last - center)
+          }
+          result.push(asinArr)
+          // console.log(asinArr)
           // removeIframe(asin)
-            resolve(result);
-        })
+          resolve(result);
+          setTimeout(() => {
+            removeIframe(asin)
+          }, 1000)
+         })
+        }, 1000)
 
       });
     };
   }
+  // B07GB4S9H5
+// B08ZNF1RTN,B08ZNHQ5D7,B0CCP82QHP,B07GB4S9H5,B0C3CMPGZ7
+  function createIframe(asin, star = 0) {
+    const starCount = ['all', 'one', 'two', 'three', 'four', 'five'][star]
+    const src = `https://${location.host}/product-reviews/${asin}/ref=cm_cr_arp_d_viewopt_fmt?ie=UTF8&filterByStar=${starCount}_stars&reviewerType=all_reviews&pageNumber=1&formatType=current_format#reviews-filter-bar`
 
-
-  function createIframe(asin) {
-    const src = `https://${location.host}/product-reviews/${asin}/ref=cm_cr_arp_d_viewopt_sr?ie=UTF8&filterByStar=all_stars&reviewerType=all_reviews&formatType=current_format&pageNumber=1`
 
     const elIframe = document.createElement("iframe");
     elIframe.setAttribute('id', asin)
     elIframe.setAttribute('src', src)
-    elIframe.setAttribute('style', "width: 100%;height: 50%;opacity:1;position:fixed;top:0;pointer-events:none;z-index:999;border:2px solid red;")
+    elIframe.setAttribute('style', "width: 100%;height: 50%;opacity:0;position:fixed;top:0;pointer-events:none;z-index:999;border:2px solid red;")
     // const elHtml = `<iframe id="${asin}" style="width: 100%;height: 50%;opacity:1;position:fixed;top:0;pointer-events:none;z-index:999;border:2px solid red;" src="${url}"></iframe>`
     document.body.appendChild(elIframe)
   }
@@ -185,56 +213,43 @@
   /** 所有星、1-5星筛选 */
   function searchStar(star, asinDoc) {
     return wait(() => {
-      console.log(asinDoc, 12);
-      asinDoc.getElementById('a-autoid-5-announce').click()
+      asinDoc.getElementById('a-autoid-5-announce')?.click()
       // 0: 所有星 5:1 4:2 3:3 2:4 1:5
       // 1052 624 169 109 65 85 
       const el = asinDoc.getElementById('star-count-dropdown_' + star)
       el?.click()
-    }, 800)
+    }, 1000)
   }
 
    /** 获取评论数量 */ 
   function getStarCount(asinDoc) {
     const starEl = asinDoc.querySelector('#filter-info-section > div[data-hook=cr-filter-info-review-rating-count] ')
-    const reviews = starEl.textContent.match(/[\d,]+/)[0].replace(',', '')
-    return reviews ?? '-'
+    const reviews = starEl?.textContent.match(/[\d,]+/)[0].replace(',', '')
+    return reviews ?? 0
   }
   const submitEl = document.querySelector('#am-helper #submit')
   const starInfoEl = document.querySelector('#am-helper #starInfo')
-  submitEl.addEventListener('click', async() => {
+  submitEl.addEventListener('click', async(e) => {
     const host = ['www.amazon.com', 'www.amazon.ca']
-    if(!location.pathname.startsWith('/product-reviews/')||!host.includes(location.host)) {
+    if(!host.includes(location.host)) {
       chrome.runtime.sendMessage({ invalidPage: true })
       return
     }
     starInfoEl.innerHTML = ''
+    e.target.value = '获取评论星级条数 1%'
     
     const asinEl = document.querySelector('#am-helper #asin')
     const asinStr = asinEl.value ?? ''
-    const asinList = asinStr.split(',')
-    // {asin1: [1星数量，2星数量，3星数量，4星数量，5星数量，所有星数量]}
-    let result = {}
-    const taskQueue = new TaskQueue();
+    const asinList = asinStr.split(/[,\s]+/).filter(Boolean)
+    if(!asinStr&&!asinList.length) return 
+    // [asin1, 1星数量，2星数量，3星数量，4星数量，5星数量，所有星数量]
+    let result = []
+    let percent = { current: 0, total: asinList.length * 6 }
+    const taskQueue = new TaskQueue(result);
     for(let i = 0; i < asinList.length; i++) {
       const asin = asinList[i]
-      const task = reqIframe(asin, result);
+      const task = reqIframe(asin, result, percent);
       taskQueue.addTask(task);
-      // await wait(createIframe.bind(this, asin))
-      // document.getElementById(asin).addEventListener('load', async function(ev){
-      //   result[asin] ??= []
-      //   const asinArr = result[asin]
-      //   for(let j = 5; j >= 0; j--) {
-      //     await searchStar(j)
-      //     const count = getStarCount(ev.target)
-      //     asinArr.push(count)
-      //   }
-      //   const first = asinArr[asinArr.length -1] - asinArr.slice(1, -1).reduce((p, c) => +p + +c)
-      //   asinArr.splice(0, 1, first)
-      //   console.log(asinArr)
-        // removeIframe(asin)
-      // })
-      console.log(result)
     }
   }) 
 
@@ -259,14 +274,14 @@
           const listing = title.split(/\s+/)[1]
           return [asin, listing, title, dimensions, price, image, weight]
         })
-        downloadFile(createExecl(data), 'AMHelper.xlsx')
+        downloadFile(createExcel(data), 'AMHelper.xlsx')
       }
     })
   })
 
 
 
-  function createExecl (data = [], title = ['asin', 'listing', 'title', 'dimensions', 'price', 'image', 'weight']) {
+  function createExcel (data = [], title = ['asin', 'listing', 'title', 'dimensions', 'price', 'image', 'weight']) {
     // 模拟一些数据，这里使用二维数组表示表格数据
     data.unshift(title)
 
