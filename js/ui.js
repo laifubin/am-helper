@@ -7,12 +7,25 @@ function createUI() {
 
       <div class="lines"></div>
 
+      <div class="form-item" id="site_wrap">
+        <!--<label for="site">站点</label> 
+        <select id="site" style="width: 100%">
+          <option value=".com">US</option>
+          <option value=".ca">CA</option>
+        </select>
+        <span class="label_name">SITE</span>
+        -->
+        <label class="label_name">SITE</label>
+        <input type="radio" id="us" name="site" value=".com" checked />
+        <label for="us">US</label>
+        <input type="radio" id="ca" name="site" value=".ca"/>
+        <label for="ca">CA</label>
+      </div>
       <div class="form-item">
         <label for="asin">ASIN</label>
         <input type="text" id="asin" placeholder="多个以英文逗号或空格隔开">
       </div>
       <input id="submit" type="button" value="获取评论星级条数" >
-      <div id="starInfo" title="1星 2星 3星 4星 5星 全部"></div>
       <!--
       <div class="diyBtn">
         <span id="currentPage">获取当前页</span>
@@ -30,7 +43,7 @@ function createUI() {
     </div>
     <span class="author">copyright@laifubin by 2023</span>
   </div>
-  <div class="close"><span><<</span></div>
+  <div class="close"><div><span id="circle"></span></div></div>
   `
   const el = document.createElement("div");
   el.setAttribute('id', 'am-helper')
@@ -39,17 +52,17 @@ function createUI() {
   document.body.appendChild(el);
 
   /** 展开折叠浮窗 */
-  const closeSpanEl = document.querySelector('#am-helper>.close>span')
-  closeSpanEl.addEventListener('click', (e) => {
+  const closeEl = document.querySelector('#am-helper>.close>div')
+  closeEl.addEventListener('click', (e) => {
     const mainEl = document.querySelector('#am-helper')
     if (mainEl.classList.contains('open')) {
       mainEl.classList.remove('open')
-      e.target.innerHTML = '>>'
-      e.target.style.textAlign = 'center'
+      // e.target.innerHTML = '>>'
+      // e.target.style.textAlign = 'center'
     } else {
       mainEl.classList.add('open')
-      e.target.innerHTML = '<<'
-      e.target.style.textAlign = 'left'
+      // e.target.innerHTML = '<<'
+      // e.target.style.textAlign = 'left'
     }
   })
 }

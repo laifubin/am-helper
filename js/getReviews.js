@@ -1,18 +1,13 @@
 /** 获取评论星级数量并下载excel */
 function getReviews() {
   const submitEl = document.querySelector('#am-helper #submit')
-  const starInfoEl = document.querySelector('#am-helper #starInfo')
   submitEl.addEventListener('click', async(e) => {
-    const host = ['www.amazon.com', 'www.amazon.ca']
-    if(!host.includes(location.host)) {
-      chrome.runtime.sendMessage({ invalidPage: true, text: '页面错误！\nhttps://www.amazon.com/product-reviews/asin\nhttps://www.amazon.ca/product-reviews/asin' })
-      return
-    }
-
-    starInfoEl.innerHTML = ''
+    const siteEl = document.querySelector('#am-helper #site_wrap input[name=site]:checked')
     const asinEl = document.querySelector('#am-helper #asin')
     const asinStr = asinEl.value ?? ''
     const asinList = asinStr.split(/[,\s]+/).filter(Boolean)
+    const site = siteEl?.value
+    console.log(site, 'site')
     
     if(!asinStr&&!asinList.length) {
       chrome.runtime.sendMessage({ invalid: true, text: 'ASIN不能为空！' })
@@ -23,24 +18,25 @@ function getReviews() {
     // [asin1, 1星数量，2星数量，3星数量，4星数量，5星数量，所有星数量]
     let result = []
     let percent = { current: 0, total: asinList.length * 6 }
-    const taskQueue = new TaskQueue((function(result){
+    const siteName = { com: 'US', ca: 'CA' }[site.slice(1)]
+    const taskQueue = new TaskQueue((function(result, siteName){
       const title = ['ASIN', '1星', '2星', '3星', '4星', '5星', '全部' ]
-      downloadFile(createExcel(result, title), '仅供参考-AM评论.xlsx')
-    }).bind(this, result));
+      downloadFile(createExcel(result, title), `仅供参考评论${siteName}.xlsx`)
+    }).bind(this, result, siteName));
 
     for(let i = 0; i < asinList.length; i++) {
       const asin = asinList[i]
-      const task = reqIframe(asin, result, percent);
+      const task = reqIframe(asin, result, percent, site);
       taskQueue.addTask(task);
     }
   }) 
 }
 
 /** 获取评论条数 */
-function reqIframe(asin, result, percent) {
+function reqIframe(asin, result, percent, site) {
   return () => {
     return new Promise(async (resolve, reject) => {
-      await wait(createIframe.bind(this, asin))
+      await wait(createIframe.bind(this, asin, site))
       document.getElementById(asin).addEventListener('load', async function(ev){
         const asinArr = [asin]
         let win = ev.target.contentWindow;
@@ -86,9 +82,9 @@ function reqIframe(asin, result, percent) {
 // B07GB4S9H5
 // B08ZNF1RTN,B08ZNHQ5D7,B0CCP82QHP,B07GB4S9H5,B0C3CMPGZ7
 /** 创建一个iframe窗口 */
-function createIframe(asin, star = 0) {
+function createIframe(asin, site, star = 0) {
   const starCount = ['all', 'one', 'two', 'three', 'four', 'five'][star]
-  const src = `https://${location.host}/product-reviews/${asin}/ref=cm_cr_arp_d_viewopt_fmt?ie=UTF8&filterByStar=${starCount}_stars&reviewerType=all_reviews&pageNumber=1&formatType=current_format#reviews-filter-bar`
+  const src = `https://www.amazon${site}/product-reviews/${asin}/ref=cm_cr_arp_d_viewopt_fmt?ie=UTF8&filterByStar=${starCount}_stars&reviewerType=all_reviews&pageNumber=1&formatType=current_format#reviews-filter-bar`
 
 
   const elIframe = document.createElement("iframe");
