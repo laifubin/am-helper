@@ -7,7 +7,6 @@ function getReviews() {
     const asinStr = asinEl.value ?? ''
     const asinList = asinStr.split(/[,\s]+/).filter(Boolean)
     const site = siteEl?.value
-    console.log(site, 'site')
     
     if(!asinStr&&!asinList.length) {
       chrome.runtime.sendMessage({ invalid: true, text: 'ASIN不能为空！' })
@@ -47,6 +46,8 @@ function reqIframe(asin, result, percent, site) {
           result.push(asinArr)
           resolve(result);
           removeIframe(asin)
+          percent.current += 6
+          el.value = '获取评论星级条数 ' + Math.round(percent.current*100 / percent.total) + '%'
           return
         }
 
