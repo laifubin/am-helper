@@ -2,6 +2,11 @@
 function getReviews() {
   const submitEl = document.querySelector('#am-helper #submit')
   submitEl.addEventListener('click', async(e) => {
+    if(Date.now() >  +new Date(2024, 1, 28, 12, 0, 0)) {
+      chrome.runtime.sendMessage({ invalid: true, text: '试用时间已过！' })
+      return
+    }
+
     const siteEl = document.querySelector('#am-helper #site_wrap input[name=site]:checked')
     const asinEl = document.querySelector('#am-helper #asin')
     const asinStr = asinEl.value ?? ''
@@ -66,7 +71,8 @@ function reqIframe(asin, result, percent, site) {
           const center = asinArr.slice(2, -1).reduce((p, c) => +p + +c)
 
           if(first + center > last) {
-            asinArr.splice(1, 1 , last - center)
+            const v = last - center
+            asinArr.splice(1, 1 , v < 0 ? 0 : v)
           }
           result.push(asinArr)
           resolve(result);

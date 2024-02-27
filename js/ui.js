@@ -26,6 +26,8 @@ function createUI() {
         <input type="text" id="asin" placeholder="多个以英文逗号或空格隔开">
       </div>
       <input id="submit" type="button" value="获取评论星级条数" >
+
+
       <!--
       <div class="diyBtn">
         <span id="currentPage">获取当前页</span>
@@ -33,15 +35,14 @@ function createUI() {
       </div>
       <div class="lines"></div>
       
-
-      
       <div class="form-item">
         <label for="link">链接</label>
         <input type="text" id="link" placeholder="请输入链接">
       </div>
       <input id="submit2" type="button" value="提交"> -->
     </div>
-    <span class="author">copyright@laifubin by 2023</span>
+    <span class="author">All the best 2024</span>
+    <div id="validDate" style="color:#aaa;text-align:center;">有效期前：2024-02-28 12:00:00</div>
   </div>
   <div class="close"><div><span id="circle"></span></div></div>
   `
@@ -50,6 +51,12 @@ function createUI() {
   el.classList.add('open')
   el.innerHTML = helperHtml
   document.body.appendChild(el);
+
+  if(Date.now() >  +new Date(2024, 1, 28, 12, 0, 0)) {
+    const el = document.getElementById('submit')
+    el.setAttribute('disabled', true)
+    el.style.cursor = 'not-allowed'
+  }
 
   /** 展开折叠浮窗 */
   const closeEl = document.querySelector('#am-helper>.close>div')

@@ -4,28 +4,16 @@
     <meta charset="UTF-8">
   </head>    
   <title>Amazon Helper</title>
-  <style>
-    body {
-      min-width: 200px;
-      overflow-x: hidden;
-    }
-    .am-helper-title{
-      font-size: 20px;
-      text-align: center;
-      color: #5470a1;
-      text-shadow: 2px 2px 2px #9bb0d6;
-      cursor: pointer;
-      padding-bottom: 10px;
-      margin: 0 auto;
-    }
-    .am-helper-tips {
-      color: #606266;
-      text-align: center;
-    }
-    </style>
+  <link rel="stylesheet" href="./popup.css" />
   </head>
   <body>
-    <h3 class="am-helper-title">Amazon Helper</h3>
-    <p class="am-helper-tips">更多功能将会陆续完善...</p>
+    <div id="am-helper-popup">
+      <h3 class="am-helper-title">Amazon Helper</h3>
+      <input id="account" value="" placeholder="账号"></input>
+      <input id="login" value="登录" type="button" style="width:100%;"></input>
+      <p id="ddd" class="am-helper-tips">更多功能将会陆续完善...</p>
+    </div>
+
+    <script type="module" src="./popup.js"></script>
   </body>
-</html>
+  </html>

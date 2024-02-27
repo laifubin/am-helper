@@ -1,0 +1,101 @@
+#am-helper input,#am-helper select,
+#am-helper-popup input,#am-helper-popup select {
+  box-sizing: border-box;
+  margin: 0;
+  list-style: none;
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  min-width: 0;
+  padding: 4px 6px;
+  color: rgba(0, 0, 0, 0.678);
+  font-size: 12px;
+  line-height: 1;
+  background-color: #fff;
+  background-image: none;
+  border: 1px solid #d9d9d9;
+  border-radius: 2px;
+  transition: all .3s
+}
+
+#am-helper input::-webkit-input-placeholder,
+#am-helper-popup input::-webkit-input-placeholder {
+  color: #bfbfbf
+}
+
+#am-helper input[type="button"]:active,
+#am-helper-popup input[type="button"]:active {
+  background-color: #6ee7b7 !important;
+}
+
+#am-helper input[type="button"]:focus,
+#am-helper-popup input[type="button"]:focus {
+  background-color: #10b981 !important;
+}
+
+#am-helper input[type="button"],
+#am-helper-popup input[type="button"] {
+  background-color: #10b981;
+  color: #fff;
+  width: 96%;
+  margin: 5px auto;
+  line-height: 1.4;
+  border-color: #10b981;
+}
+
+#am-helper input[type=radio],
+#am-helper-popup input[type=radio] {
+  position: absolute;
+  z-index: -999;
+  opacity: 0;  
+}
+
+#am-helper input[type=radio] + label,
+#am-helper-popup input[type=radio] + label {
+  color: rgba(0, 0, 0, 0.678);
+  box-sizing: border-box;
+  margin-right: 24px;
+}
+
+#am-helper input[type=radio] + label::before,
+#am-helper-popup input[type=radio] + label::before {
+  content: "";
+  background-color: #fff;
+  border: 1px solid #34d399;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  float: left;
+  margin-top: 2px;
+  padding: 2px;
+}
+
+#am-helper input[type=radio]:checked + label::before,
+#am-helper-popup input[type=radio]:checked + label::before {
+  content: "";
+  background-color: #059669;
+  background-clip: content-box;
+}
+
+#am-helper select option,
+#am-helper-popup select option {
+  background-color: #ecfdf5;
+}
+#am-helper select option:checked,
+#am-helper-popup select option:checked {
+  background-color: #a7f3d0;
+}
+
+#am-helper input:hover,#am-helper select:hover,
+#am-helper-popup input:hover,#am-helper-popup select:hover {
+  border-color: #10b981;
+  border-right-width: 1px!important;
+}
+
+#am-helper input:focus,#am-helper select:focus,
+#am-helper-popup input:focus,#am-helper-popup select:focus {
+  border-color: #10b981;
+  border-right-width: 1px!important;
+  outline: 0;
+  box-shadow: 0 0 0 2px #ccfbf1;
+}
